@@ -1,5 +1,10 @@
+
 import 'package:diet_app/main.dart';
 import 'package:diet_app/presentation/screens/forget_password_screen.dart';
+
+
+import 'package:diet_app/presentation/screens/profile_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:diet_app/presentation/screens/register_screen.dart';
 
@@ -38,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: 200,
                         width: 200,
                         child: Image(
-                          image: const AssetImage("assets/logo.png"),
+                          image: const AssetImage("assets/WhiteLogo.png"),
                           errorBuilder: (context, error, stackTrace) =>
                           const Icon(
                             Icons.fitness_center_outlined,
@@ -211,15 +216,19 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text(
-                              "Forget Password ?",
-                              style: TextStyle(
+                            TextButton(
+                              onPressed: () {},
+                              child: Text(
+                                "Forget Password ?",
+                                style: TextStyle(
                                   color: Color(0xFF77DD77),
-                                  fontWeight: FontWeight.bold),
-                            ),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
                           ],
                         ),
                         const SizedBox(height: 15),
@@ -281,6 +290,7 @@ class _LoginPageState extends State<LoginPage> {
                                 AssetImage("assets/insta.jpeg"),
                               ),
                             ),
+
                             const SizedBox(width: 15),
                             InkWell(
                               onTap: () {},
@@ -338,7 +348,8 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_isFormKey.currentState!.validate()) {
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
+          context, MaterialPageRoute(builder: (context) => const ProfilePage()
+    ));
     }
   }
 }

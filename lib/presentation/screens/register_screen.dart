@@ -34,7 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 200,
                   width: 200,
                   child: Image(
-                    image: const AssetImage("assets/logo1.png"),
+                    image: const AssetImage("assets/GreenLogo.png"),
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.fitness_center_outlined,
                       size: 100,
@@ -279,24 +279,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        InkWell(
-                          onTap: () {},
-                          borderRadius: BorderRadius.circular(25),
-                          child: const CircleAvatar(
-                            radius: 25,
-                            backgroundImage: AssetImage("assets/fb.png"),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        InkWell(
-                          onTap: () {},
-                          borderRadius: BorderRadius.circular(25),
-                          child: const CircleAvatar(
-                            radius: 25,
-                            backgroundImage: AssetImage("assets/insta.jpeg"),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
                         InkWell(
                           onTap: () {},
                           borderRadius: BorderRadius.circular(25),
