@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:diet_app/presentation/screens/login_screen.dart';
+import 'package:diet_app/presentation/screens/register_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,6 +18,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,7 +33,22 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text("Diet App"),
       ),
+      body: Column(
+        children: [
+          ElevatedButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => LoginPage()));
+              },
+              child: Text("Login")),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => RegisterPage()));
+              },
+              child: Text("Register")),
+        ],
+      ),
     );
   }
 }
-
