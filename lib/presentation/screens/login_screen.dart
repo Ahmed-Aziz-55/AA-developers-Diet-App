@@ -1,4 +1,5 @@
 import 'package:diet_app/main.dart';
+import 'package:diet_app/presentation/screens/forget_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/presentation/screens/register_screen.dart';
 
@@ -337,7 +338,7 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_isFormKey.currentState!.validate()) {
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const HomePage()));
+          context, MaterialPageRoute(builder: (context) => HomePage()));
     }
   }
 }

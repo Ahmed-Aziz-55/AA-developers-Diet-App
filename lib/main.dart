@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:diet_app/presentation/screens/login_screen.dart';
 import 'package:diet_app/presentation/screens/register_screen.dart';
 import 'package:diet_app/presentation/screens/splash_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';  // 👈 Add this
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // 👈 Required for async
+
+  // 👇 Supabase Initialize - Add this
+  await Supabase.initialize(
+    url: 'https://xfkhhukxaqzlavuufkiy.supabase.co',
+    anonKey: 'sb_publishable_p136t8aQPfw2V4F0_9tM0g_oKiNOFN-',
+  );
+
   runApp(const MyApp());
 }
 
@@ -25,6 +34,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

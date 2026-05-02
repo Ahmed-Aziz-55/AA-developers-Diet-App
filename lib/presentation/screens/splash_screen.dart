@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:diet_app/presentation/screens/forget_password_screen.dart';
+import 'package:diet_app/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/main.dart';
 
@@ -38,7 +40,7 @@ class _IntroSplashScreenState extends State<IntroSplashScreen>
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => LoginPage()),
         );
       }
     });
