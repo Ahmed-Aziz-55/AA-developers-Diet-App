@@ -19,13 +19,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Supabase ko email bhejne ke liye call karo
       await Supabase.instance.client.auth.resetPasswordForEmail(
         _emailController.text.trim(),
-        redirectTo: 'dietapp://reset-password',
+        redirectTo: 'dietapp://reset-password', // Your deep link scheme
       );
 
-      // Agar successful ho to next screen dikhao
       if (mounted) {
         _showEmailSentDialog();
       }
@@ -46,7 +44,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   void _showEmailSentDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // User dialog ke bahar click nahi kar sakta
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -102,7 +100,6 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    // Dialog close karo aur login screen par jao
                     Navigator.pop(context); // Dialog close
                     Navigator.pop(context); // Forgot password screen close
                   },
@@ -170,6 +167,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 child: TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: "Enter your Email address",
                     prefixIcon: const Icon(Icons.email, color: Color(0xFF4CAF50)),
@@ -201,7 +199,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _sendResetLink,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50), // Green color
+                  backgroundColor: const Color(0xFF4CAF50),
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
@@ -228,8 +226,8 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Wapas login screen par
+                onPressed: _isLoading ? null : () {
+                  Navigator.pop(context);
                 },
                 child: const Text(
                   'Back to Login',

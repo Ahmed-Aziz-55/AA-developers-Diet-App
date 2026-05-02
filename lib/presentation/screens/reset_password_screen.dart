@@ -25,10 +25,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Future<void> _verifyAndExchangeCode() async {
     try {
-
       if (widget.resetUrl != null) {
         final uri = Uri.parse(widget.resetUrl!);
         final code = uri.queryParameters['code'];
+
+        print('Reset URL: ${widget.resetUrl}'); // Debug print
+        print('Code: $code'); // Debug print
 
         if (code != null && code.isNotEmpty) {
           await Supabase.instance.client.auth.exchangeCodeForSession(code);
@@ -40,10 +42,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           });
         }
       } else {
-        setState(() {
-          _errorMessage = 'No reset link found. Please request a new one.';
-          _isVerifying = false;
-        });
+        // Check if we already have a session (deep link might have been handled)
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          setState(() => _isVerifying = false);
+        } else {
+          setState(() {
+            _errorMessage = 'No reset link found. Please request a new one.';
+            _isVerifying = false;
+          });
+        }
       }
     } catch (e) {
       setState(() {
@@ -59,12 +67,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Password update karo
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: _newPasswordController.text.trim()),
       );
 
-      // Success screen par jao
       if (mounted) {
         _showSuccessDialog();
       }
@@ -121,14 +127,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Dialog close
-                    Navigator.pop(context); // Reset screen close
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                          (route) => false,
-                    );
+                  onPressed: () async {
+                    // Sign out from Supabase
+                    await Supabase.instance.client.auth.signOut();
+                    if (context.mounted) {
+                      Navigator.pop(context); // Dialog close
+                      Navigator.pop(context); // Reset screen close
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                            (route) => false,
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4CAF50),
@@ -208,7 +218,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   onPressed: () {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
-                      '/forgot-password',
+                      '/login',
                           (route) => false,
                     );
                   },
@@ -221,7 +231,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Request New Link',
+                    'Back to Login',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -278,6 +288,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               TextFormField(
                 controller: _newPasswordController,
                 obscureText: true,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   labelText: 'New Password',
                   hintText: 'Enter at least 6 characters',
@@ -305,6 +316,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: true,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   labelText: 'Confirm Password',
                   hintText: 'Re-enter your new password',

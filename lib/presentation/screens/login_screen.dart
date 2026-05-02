@@ -1,12 +1,9 @@
-
-import 'package:diet_app/main.dart';
 import 'package:diet_app/presentation/screens/forget_password_screen.dart';
-
-
-import 'package:diet_app/presentation/screens/profile_screen.dart';
-
 import 'package:flutter/material.dart';
 import 'package:diet_app/presentation/screens/register_screen.dart';
+import 'package:diet_app/main.dart' show HomePage;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,18 +14,155 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _isFormKey = GlobalKey<FormState>();
-  TextEditingController email = TextEditingController();
-  TextEditingController password = TextEditingController();
-
+  final TextEditingController email = TextEditingController();
+  final TextEditingController password = TextEditingController();
+  bool _isLoading = false;
   bool emailHasError = false;
   bool passwordHasError = false;
+
+  // v7: use the singleton, not a constructor
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _googleSignInInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initGoogleSignIn();
+  }
+
+  Future<void> _initGoogleSignIn() async {
+    try {
+      // v7: initialize() must be called exactly once before any other method
+      await _googleSignIn.initialize();
+      if (mounted) setState(() => _googleSignInInitialized = true);
+    } catch (e) {
+      debugPrint('GoogleSignIn.initialize() failed: $e');
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Ensure initialized before proceeding
+      if (!_googleSignInInitialized) {
+        await _googleSignIn.initialize();
+        _googleSignInInitialized = true;
+      }
+
+      // v7: authenticate() replaces signIn() — throws GoogleSignInException on cancel/error
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
+        scopeHint: ['email', 'profile'],
+      );
+
+      // v7: authentication is now SYNCHRONOUS (no await)
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception('Failed to retrieve ID token from Google.');
+      }
+
+      // v7: access token is obtained via authorizationClient separately
+      String? accessToken;
+      try {
+        final authorization = await _googleSignIn.authorizationClient
+            .authorizationForScopes(['email', 'profile']);
+        accessToken = authorization?.accessToken;
+      } catch (_) {
+        // accessToken is optional for Supabase — safe to continue without it
+      }
+
+      final AuthResponse response =
+      await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Sign-In Successful!'),
+            backgroundColor: Color(0xFF77DD77),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
+    } on GoogleSignInException catch (e) {
+      // Silently ignore user-cancelled sign-in
+      if (e.code != GoogleSignInExceptionCode.canceled && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Google Sign-In Failed: ${e.description ?? e.code.name}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In Failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleEmailLogin() async {
+    if (!_isFormKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
+      );
+
+      if (response.user != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login Successful!'),
+            backgroundColor: Color(0xFF77DD77),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login Failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
-        color: Color(0xFF77DD77),
+        color: const Color(0xFF77DD77),
         child: Stack(
           children: [
             Column(
@@ -38,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                 Expanded(
                   flex: 3,
                   child: Container(
-                    color: Color(0xFF77DD77),
+                    color: const Color(0xFF77DD77),
                     child: SizedBox(
                         height: 200,
                         width: 200,
@@ -95,9 +229,10 @@ class _LoginPageState extends State<LoginPage> {
                           controller: email,
                           cursorErrorColor: Colors.red,
                           cursorRadius: const Radius.circular(20),
-                          cursorColor: Color(0xFF77DD77),
+                          cursorColor: const Color(0xFF77DD77),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
+                          enabled: !_isLoading,
                           decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.grey[100],
@@ -106,11 +241,11 @@ class _LoginPageState extends State<LoginPage> {
                               floatingLabelStyle: TextStyle(
                                   color: emailHasError
                                       ? Colors.red
-                                      : Color(0xFF77DD77)),
+                                      : const Color(0xFF77DD77)),
                               prefixIcon: Icon(Icons.email,
                                   color: emailHasError
                                       ? Colors.red
-                                      : Color(0xFF77DD77)),
+                                      : const Color(0xFF77DD77)),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide:
@@ -123,7 +258,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               errorBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                borderSide: const BorderSide(color: Colors.red),
+                                borderSide:
+                                const BorderSide(color: Colors.red),
                               ),
                               focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(20),
@@ -132,20 +268,14 @@ class _LoginPageState extends State<LoginPage> {
                               errorStyle: const TextStyle(color: Colors.red)),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              setState(() {
-                                emailHasError = true;
-                              });
+                              setState(() => emailHasError = true);
                               return "Enter Email";
                             }
                             if (!value.contains("@")) {
-                              setState(() {
-                                emailHasError = true;
-                              });
+                              setState(() => emailHasError = true);
                               return "Enter Valid Email";
                             }
-                            setState(() {
-                              emailHasError = false;
-                            });
+                            setState(() => emailHasError = false);
                             return null;
                           },
                         ),
@@ -162,20 +292,21 @@ class _LoginPageState extends State<LoginPage> {
                           cursorColor: Colors.black,
                           obscureText: true,
                           textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => _handleLogin(),
+                          enabled: !_isLoading,
+                          onFieldSubmitted: (_) => _handleEmailLogin(),
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey[100],
                             prefixIcon: Icon(Icons.lock,
                                 color: passwordHasError
                                     ? Colors.red
-                                    : Color(0xFF77DD77)),
+                                    : const Color(0xFF77DD77)),
                             labelText: "Enter Your Password",
                             labelStyle: const TextStyle(color: Colors.grey),
                             floatingLabelStyle: TextStyle(
                                 color: passwordHasError
                                     ? Colors.red
-                                    : Color(0xFF77DD77)),
+                                    : const Color(0xFF77DD77)),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide:
@@ -198,20 +329,14 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              setState(() {
-                                passwordHasError = true;
-                              });
+                              setState(() => passwordHasError = true);
                               return "Enter Password";
                             }
                             if (value.length < 6) {
-                              setState(() {
-                                passwordHasError = true;
-                              });
+                              setState(() => passwordHasError = true);
                               return "Password must be 6 characters";
                             }
-                            setState(() {
-                              passwordHasError = false;
-                            });
+                            setState(() => passwordHasError = false);
                             return null;
                           },
                         ),
@@ -220,8 +345,16 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed: () {},
-                              child: Text(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                        const ForgetPasswordScreen()));
+                              },
+                              child: const Text(
                                 "Forget Password ?",
                                 style: TextStyle(
                                   color: Color(0xFF77DD77),
@@ -236,13 +369,23 @@ class _LoginPageState extends State<LoginPage> {
                           width: double.infinity,
                           height: 40,
                           child: ElevatedButton(
-                            onPressed: _handleLogin,
+                            onPressed: _isLoading ? null : _handleEmailLogin,
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF77DD77),
+                                backgroundColor: const Color(0xFF77DD77),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 )),
-                            child: const Text(
+                            child: _isLoading
+                                ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white),
+                              ),
+                            )
+                                : const Text(
                               "Sign In",
                               style: TextStyle(
                                   color: Colors.white,
@@ -273,27 +416,7 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             InkWell(
-                              onTap: () {},
-                              borderRadius: BorderRadius.circular(25),
-                              child: const CircleAvatar(
-                                radius: 25,
-                                backgroundImage: AssetImage("assets/fb.png"),
-                              ),
-                            ),
-                            const SizedBox(width: 15),
-                            InkWell(
-                              onTap: () {},
-                              borderRadius: BorderRadius.circular(25),
-                              child: const CircleAvatar(
-                                radius: 25,
-                                backgroundImage:
-                                AssetImage("assets/insta.jpeg"),
-                              ),
-                            ),
-
-                            const SizedBox(width: 15),
-                            InkWell(
-                              onTap: () {},
+                              onTap: _isLoading ? null : _handleGoogleSignIn,
                               borderRadius: BorderRadius.circular(25),
                               child: const CircleAvatar(
                                 radius: 25,
@@ -313,7 +436,9 @@ class _LoginPageState extends State<LoginPage> {
                               style: TextStyle(color: Colors.black54),
                             ),
                             TextButton(
-                              onPressed: () {
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -321,7 +446,7 @@ class _LoginPageState extends State<LoginPage> {
                                         const RegisterPage()));
                               },
                               style: TextButton.styleFrom(
-                                foregroundColor: Color(0xFF77DD77),
+                                foregroundColor: const Color(0xFF77DD77),
                               ),
                               child: const Text(
                                 "Register",
@@ -345,11 +470,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _handleLogin() {
-    if (_isFormKey.currentState!.validate()) {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const ProfilePage()
-    ));
-    }
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
   }
 }
