@@ -63,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelStyle: const TextStyle(color: Colors.grey),
                         floatingLabelStyle: TextStyle(
                             color:
-                                emailHasError ? Colors.red : Color(0xFF77DD77)),
+                                emailHasError ? Colors.red : Color(0xFF77DD77) ),
                         prefixIcon: Icon(Icons.email,
                             color:
                                 emailHasError ? Colors.red : Color(0xFF77DD77)),

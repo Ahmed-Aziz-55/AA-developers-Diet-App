@@ -38,7 +38,8 @@ class _LoginPageState extends State<LoginPage> {
                         width: 200,
                         child: Image(
                           image: const AssetImage("assets/logo.png"),
-                          errorBuilder: (context, error, stackTrace) => const Icon(
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
                             Icons.fitness_center_outlined,
                             size: 100,
                             color: Colors.white,
@@ -63,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             SafeArea(
               child: SingleChildScrollView(
                 keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 40),
                   padding: const EdgeInsets.only(top: 230),
@@ -107,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide:
-                                const BorderSide(color: Colors.black26),
+                                    const BorderSide(color: Colors.black26),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
@@ -172,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide:
-                              const BorderSide(color: Colors.black26),
+                                  const BorderSide(color: Colors.black26),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
@@ -182,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                             errorBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide:
-                                const BorderSide(color: Colors.red)),
+                                    const BorderSide(color: Colors.red)),
                             focusedErrorBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 borderSide: const BorderSide(
@@ -276,7 +277,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: const CircleAvatar(
                                 radius: 25,
                                 backgroundImage:
-                                AssetImage("assets/insta.jpeg"),
+                                    AssetImage("assets/insta.jpeg"),
                               ),
                             ),
                             const SizedBox(width: 15),
@@ -286,7 +287,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: const CircleAvatar(
                                 radius: 25,
                                 backgroundImage:
-                                AssetImage("assets/google.png"),
+                                    AssetImage("assets/google.png"),
                               ),
                             ),
                           ],
@@ -306,7 +307,7 @@ class _LoginPageState extends State<LoginPage> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
-                                        const RegisterPage()));
+                                            const RegisterPage()));
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: Color(0xFF77DD77),
