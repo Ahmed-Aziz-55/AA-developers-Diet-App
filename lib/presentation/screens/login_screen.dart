@@ -337,7 +337,7 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_isFormKey.currentState!.validate()) {
       Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+          context, MaterialPageRoute(builder: (context) => const HomePage()));
     }
   }
 }
