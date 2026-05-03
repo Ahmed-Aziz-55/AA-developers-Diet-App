@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:diet_app/presentation/screens/forget_password_screen.dart';
+import 'package:diet_app/Domain/usecases/bmi_calculator.dart';
+import 'package:diet_app/presentation/screens/dashboard_screen.dart';
 import 'package:diet_app/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:diet_app/main.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class IntroSplashScreen extends StatefulWidget {
   const IntroSplashScreen({super.key});
@@ -35,15 +36,60 @@ class _IntroSplashScreenState extends State<IntroSplashScreen>
 
     _controller.forward();
 
-    // After 2 seconds go to HomePage
+    // After 2 seconds, check session and navigate accordingly
     Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      }
+      if (mounted) _checkSessionAndNavigate();
     });
+  }
+
+  /// Checks if a Supabase session exists.
+  /// If yes → checks if the user has completed their profile.
+  ///   - Profile complete   → DashboardScreen
+  ///   - Profile incomplete → BmiCalculator (profile setup)
+  /// If no  → LoginPage
+  Future<void> _checkSessionAndNavigate() async {
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (session == null) {
+      // No active session → go to login
+      _navigateTo(const LoginPage());
+      return;
+    }
+
+    // Session exists → check profile completeness
+    try {
+      final userId = session.user.id;
+      final profile = await Supabase.instance.client
+          .from('profiles')
+          .select('full_name, height_cm, current_weight_kg, gender, activity_level, goal_type')
+          .eq('id', userId)
+          .maybeSingle(); // returns null if row doesn't exist
+
+      final bool profileComplete = profile != null &&
+          (profile['full_name'] as String?)?.isNotEmpty == true &&
+          profile['height_cm'] != null &&
+          profile['current_weight_kg'] != null &&
+          profile['gender'] != null &&
+          profile['activity_level'] != null &&
+          profile['goal_type'] != null;
+
+      if (profileComplete) {
+        _navigateTo(const DashboardScreen());
+      } else {
+        _navigateTo(const BmiCalculator());
+      }
+    } catch (_) {
+      // On any error fall back to login
+      _navigateTo(const LoginPage());
+    }
+  }
+
+  void _navigateTo(Widget screen) {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
   @override
