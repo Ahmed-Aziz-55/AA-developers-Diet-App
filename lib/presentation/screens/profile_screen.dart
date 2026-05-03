@@ -1,3 +1,4 @@
+import 'package:diet_app/presentation/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/main.dart';
 import 'package:diet_app/presentation/screens/login_screen.dart';
@@ -29,7 +30,7 @@ class _ProfileState extends State<ProfilePage> {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  MaterialPageRoute(builder: (context) => DashboardScreen()),
                 );
               },
             ),
