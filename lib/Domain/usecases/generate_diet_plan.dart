@@ -78,18 +78,59 @@ class _PreparingPlanScreenState extends State<PreparingPlanScreen> {
       if (goal == 'lose') targetCalories = tdee - 500;
       if (goal == 'gain') targetCalories = tdee + 300;
 
+      double weeklyTargetKg = 0;
+      if (goal == 'lose') weeklyTargetKg = 0.5;
+      if (goal == 'gain') weeklyTargetKg = 0.25;
+
+      double proteinPct = 0.30;
+      double carbsPct = 0.40;
+      double fatPct = 0.30;
+
+      if (goal == 'lose') {
+        proteinPct = 0.35;
+        carbsPct = 0.35;
+        fatPct = 0.30;
+      } else if (goal == 'gain') {
+        proteinPct = 0.25;
+        carbsPct = 0.50;
+        fatPct = 0.25;
+      }
+
+      final proteinG = (targetCalories * proteinPct) / 4;
+      final carbsG = (targetCalories * carbsPct) / 4;
+      final fatG = (targetCalories * fatPct) / 9;
+
+      final waterMl = weight * 35; // 35ml per kg
+
       await Supabase.instance.client.from('profiles').update({
         'daily_calorie_target': targetCalories,
       }).eq('id', user.id);
 
-      await Supabase.instance.client.from('diet_plans').upsert({
+// 1) Purane active plan ko inactive karo
+      await Supabase.instance.client
+          .from('diet_plans')
+          .update({'is_active': false})
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+// 2) Naya plan insert karo
+      await Supabase.instance.client
+          .from('diet_plans')
+          .insert({
         'user_id': user.id,
         'goal_type': goal,
         'activity_level': activity,
         'target_calories': targetCalories,
+        'protein_g': proteinG,
+        'carbs_g': carbsG,
+        'fat_g': fatG,
+        'weekly_target_kg': weeklyTargetKg,
+        'water_ml': waterMl,
         'is_active': true,
-      });
-
+      })
+          .select();
+      debugPrint('CREATE PLAN START');
+      debugPrint('protein=$proteinG carbs=$carbsG fat=$fatG water=$waterMl weekly=$weeklyTargetKg');
       await Supabase.instance.client.from('bmr_calculations').insert({
         'user_id': user.id,
         'bmr': bmr,

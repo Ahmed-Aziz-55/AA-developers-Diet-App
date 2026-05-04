@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:diet_app/Domain/usecases/bmi_calculator.dart';
 import 'package:diet_app/presentation/screens/dashboard_screen.dart';
 import 'package:diet_app/presentation/screens/forget_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:diet_app/presentation/screens/register_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class LoginPage extends StatefulWidget {
@@ -22,29 +23,22 @@ class _LoginPageState extends State<LoginPage> {
   bool emailHasError = false;
   bool passwordHasError = false;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  bool _googleSignInInitialized = false;
+  late final StreamSubscription<AuthState> _authSub;
 
   @override
   void initState() {
     super.initState();
-    _initGoogleSignIn();
-  }
 
-  Future<void> _initGoogleSignIn() async {
-    if (_googleSignInInitialized) return;
-
-    try {
-      await _googleSignIn.initialize();
-
-      if (mounted) {
-        setState(() {
-          _googleSignInInitialized = true;
-        });
+    // Listen for OAuth callback session
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+      final session = data.session;
+      final user = session?.user;
+      if (user != null && mounted) {
+        _showCenterSnackBar('Google Sign-In Successful', isError: false);
+        await Future.delayed(const Duration(milliseconds: 600));
+        await _navigateAfterLogin(user.id);
       }
-    } catch (e) {
-      debugPrint('GoogleSignIn.initialize() failed: $e');
-    }
+    });
   }
 
   void _showCenterSnackBar(String message, {bool isError = false}) {
@@ -107,28 +101,28 @@ class _LoginPageState extends State<LoginPage> {
     if (kIsWeb) {
       if (mounted) {
         _showCenterSnackBar(
-          'Google Sign-In on web requires renderButton()',
+          'Google Sign-In on web requires a different flow',
           isError: true,
         );
       }
       return;
     }
 
+    if (_isLoading) return;
+
     setState(() => _isLoading = true);
 
     try {
-      final GoogleSignInAccount googleUser =
-      await _googleSignIn.authenticate(
-        scopeHint: ['email', 'profile'],
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.flutter://login-callback/',
       );
-
-      // remaining code...
+    } on AuthException catch (e) {
+      if (mounted) _showCenterSnackBar('Google Sign-In Failed: ${e.message}', isError: true);
     } catch (e) {
-      _showCenterSnackBar('Google Sign-In Failed', isError: true);
+      if (mounted) _showCenterSnackBar('Google Sign-In Failed: $e', isError: true);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -169,7 +163,63 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
+  String _mapAuthError(String message) {
+    final code = message.toLowerCase();
 
+    if (code.contains('invalid login credentials')) {
+      return 'Invalid email or password. Please try again.';
+    } else if (code.contains('email not confirmed')) {
+      return 'Email not verified. Check your inbox and confirm your email.';
+    } else if (code.contains('invalid email')) {
+      return 'Enter a valid email address.';
+    } else if (code.contains('too many requests')) {
+      return 'Too many attempts. Try again later.';
+    }
+
+    return 'Something went wrong. Please try again.';
+  }
+  void _showModernSnackBar(String message, {required bool isError}) {
+    final color = isError ? Colors.red : Colors.green;
+    final icon = isError ? Icons.error_outline : Icons.check_circle_outline;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        content: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   Future<void> _handleEmailLogin() async {
     if (!_isFormKey.currentState!.validate()) return;
 
@@ -182,20 +232,25 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.user != null && mounted) {
-        _showCenterSnackBar('Log In Successful', isError: false);
-        // Small delay so snackbar is visible before navigation
+        _showModernSnackBar('Login successful!', isError: false);
+
         await Future.delayed(const Duration(milliseconds: 800));
+
         await _navigateAfterLogin(response.user!.id);
       }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
+      final message = _mapAuthError(e.message);
+      _showModernSnackBar(message, isError: true);
     } catch (e) {
       if (mounted) {
-        _showCenterSnackBar('Login Failed: ${e.toString()}', isError: true);
+        _showModernSnackBar('Unexpected error occurred. Try again.', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -511,6 +566,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _authSub.cancel();
     email.dispose();
     password.dispose();
     super.dispose();
