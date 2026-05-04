@@ -1,6 +1,5 @@
 import 'package:diet_app/presentation/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:diet_app/main.dart';
 import 'package:diet_app/presentation/screens/login_screen.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -12,9 +11,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfileState extends State<ProfilePage> {
 
-  int _weightGoal = 65; // kg
-  int _currentWeight = 72; // kg
-  int _daysActive = 28;
+  final int _weightGoal = 65; // kg
+  final int _currentWeight = 72; // kg
+  final int _daysActive = 28;
 
   @override
   Widget build(BuildContext context) {

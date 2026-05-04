@@ -150,7 +150,6 @@ class _PreparingPlanScreenState extends State<PreparingPlanScreen> {
 
   void _showCenterSnackBar(String message, {bool isError = false}) {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
 
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
